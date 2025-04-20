@@ -1,6 +1,6 @@
 /**
- * Converts audio data to the format required by Edge Impulse
- * This is a placeholder implementation - you'll need to adjust based on
+ * Prepares audio data for Edge Impulse API
+ * This is a simplified implementation - you might need to adjust based on
  * Edge Impulse's specific requirements for your project
  */
 export async function prepareAudioForEdgeImpulse(
