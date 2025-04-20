@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-BirdSong ID is a web application designed to identify bird species based on their songs or calls, similar in concept to Shazam but specialized for avian sounds. It utilizes the Edge Impulse API for audio classification.
+BirdSong ID is a web application designed to identify bird species based on their songs or calls, similar in concept to Shazam but specialized for avian sounds. It utilizes a WebAssembly-powered model for client-side audio classification, ensuring fast processing and offline capability.
 
 ## 2. Goals
 
@@ -23,19 +23,17 @@ BirdSong ID is a web application designed to identify bird species based on thei
 This initial slice focuses on the core end-to-end functionality.
 
 - **Frontend (React/Vite/Tailwind):**
-  - A simple interface with a button to start/stop audio recording.
-  - Mechanism to capture audio using the browser's `navigator.mediaDevices.getUserMedia`.
-  - Functionality to send the recorded audio data (e.g., as a Blob) to the backend API endpoint.
-  - Display area to show the classification result (top predicted species and confidence score) received from the backend.
-  - Basic loading/status indicator during recording and analysis.
-  - Basic error handling display (e.g., microphone permission denied, API error).
-- **Backend (Express):**
-  - An API endpoint (e.g., `/api/classify`) to receive audio data from the frontend (using `multer` or similar for handling file/blob data).
-  - Securely store and access the Edge Impulse API key and Project ID (using environment variables via `dotenv`).
-  - Logic to forward the received audio data to the appropriate Edge Impulse classification API endpoint.
-  - Handle the response from the Edge Impulse API.
-  - Send a structured response back to the frontend containing the top prediction (species name) and confidence score, or an error message.
-  - Implement basic CORS (Cross-Origin Resource Sharing) to allow requests from the frontend domain.
+  - A simple interface with a button to start/stop audio recording
+  - Mechanism to capture audio using the browser's `navigator.mediaDevices.getUserMedia`
+  - WebAssembly-based model initialization and runtime management
+  - Direct audio input to WebAssembly module
+  - Display area to show the classification result
+  - Basic loading/status indicator during recording
+  - Basic error handling display (e.g., microphone permission denied)
+- **Backend (Express - minimal):**
+  - Serve static assets and model files
+  - Bird information API endpoints
+  - Basic CORS (Cross-Origin Resource Sharing) configuration
 
 ## 5. Future Iterations (Potential Slices)
 
@@ -55,26 +53,32 @@ This initial slice focuses on the core end-to-end functionality.
 
 ## 6. Tech Stack
 
-- **Frontend:** Vite, React, TypeScript, Tailwind CSS
-- **Backend:** Node.js, Express
-- **API:** Edge Impulse (for audio classification)
+- **Frontend:**
+  - Vite, React, TypeScript, Tailwind CSS
+  - WebAssembly for model deployment
+  - Web Audio API for audio processing
+- **Backend:** Lightweight Express server for static assets and bird data
+- **Model:** Edge Impulse-exported WebAssembly model for bird sound classification
 - **Deployment:** (TBD - e.g., Vercel, Netlify, Heroku)
 
 ## 7. Architecture
 
-- **Frontend:** Single Page Application (SPA) handling user interaction and presentation.
-- **Backend:** Acts as a secure proxy/intermediary between the frontend and the Edge Impulse API. It handles API key management and forwards requests.
-- **External API:** Edge Impulse performs the core machine learning classification.
+- **Frontend:**
+  - Single Page Application (SPA) handling user interaction and presentation
+  - WebAssembly module for local model inference
+  - Web Audio API for audio capture and processing
+- **Backend:** Minimal server for serving static assets and bird information
+- **Model:** WebAssembly-compiled model runs entirely in the browser
 
 ## 8. Implementation Approach
 
-- **Vertical Slice:** Build the MVP (Slice 1) first, ensuring the core record -> send -> classify -> display loop works. Subsequent features will be added as separate slices.
-- **LLM-Assisted:** Leverage LLM for code generation, explanation, debugging, and documentation, reviewing the existing codebase at each step to inform the next action.
+- **Vertical Slice:** Build the MVP (Slice 1) first, ensuring the core record -> process -> classify -> display loop works entirely in the browser
+- **WebAssembly Integration:** Carefully manage model initialization and memory handling
+- **LLM-Assisted:** Leverage LLM for code generation, explanation, debugging, and documentation
 
 ## 9. Non-Goals (Initially)
 
-- User authentication/accounts.
-- Offline functionality.
-- Real-time classification during recording.
-- Complex database integration for storing recordings or user data.
-- Support for pre-recorded audio file uploads (focus on live recording first).
+- User authentication/accounts
+- Complex database integration for storing recordings
+- Support for pre-recorded audio file uploads (focus on live recording first)
+- Model training or fine-tuning (use pre-trained model initially)

@@ -6,8 +6,8 @@ We're using a feature-focused vertical slice approach with iterative phases beca
 
 1. The existing codebase already has UI components and routing in place
 2. We need to integrate new functionality into existing components
-3. Each phase builds on previous work while remaining functional
-4. Testing can be done end-to-end after each phase
+3. WebAssembly model deployment requires careful initialization and memory management
+4. Focus on simple recording functionality first
 
 ## Phase 1: Audio Recording Core (Frontend)
 
@@ -19,117 +19,113 @@ We're using a feature-focused vertical slice approach with iterative phases beca
 - [x] Add audio visualization during recording
 - [x] Implement temporary audio storage
 
-## Phase 2: Backend API Setup
+## Phase 2: WebAssembly Model Integration
 
-- [x] Set up Express routes for audio classification
-  - POST /api/classify endpoint
-  - File upload handling with multer
-- [x] Implement Edge Impulse API integration
-  - Audio format validation
-  - Secure API key handling
-  - Error handling
-- [x] Add CORS configuration
-- [ ] Test API endpoints with sample audio
+- [ ] Set up WebAssembly environment
+  - Add Edge Impulse generated WASM files
+  - Create model initialization utilities
+  - Set up memory management helpers
+- [ ] Implement EdgeImpulseClassifier wrapper
+  - Add initialization logic
+  - Implement classify method with raw audio input
+  - Add array to heap conversion utilities
+  - Add proper memory cleanup
 
-## Phase 3: Bird Database Setup
+## Phase 3: Bird Database Integration
 
-- [ ] Set up MongoDB integration
-  - Install mongoose
-  - Create bird schema
-  - Set up connection handling
-- [ ] Create bird data management endpoints
-  - GET /api/birds - List all birds
-  - GET /api/birds/:id - Get bird details
-  - POST /api/birds - Add new bird (admin)
-  - PUT /api/birds/:id - Update bird info (admin)
-- [ ] Create initial data migration
-  - Bird species details
-  - Sample recordings
-  - Image references
-- [ ] Add caching layer for frequently accessed data
-  - Redis for API response caching
-  - Local storage sync for offline data
-- [ ] Implement recognition tracking
-  - Update recognitionCount after successful classification
-  - Add endpoint to get most frequently recognized birds
-
-## Phase 4: Frontend-Backend Integration
-
-- [ ] Add API service in frontend
-  - Implement audio upload function
+- [ ] Set up bird information storage
+  - Define bird data structure
+  - Create static JSON data files
+  - Set up basic API endpoints
+- [ ] Implement frontend data fetching
+  - Add API service methods
+  - Implement caching strategy
   - Add error handling
-  - Add loading states
-- [ ] Connect RecordButton to backend API
-- [ ] Enhance ResultsPage component to display API responses
-- [ ] Implement retry mechanism for failed uploads
+- [ ] Create bird detail components
+  - Add species information display
+  - Include recognition confidence
+  - Show related species
+
+## Phase 4: Frontend Enhancement
+
+- [ ] Add classification results display
+  - Show prediction and confidence
+  - Add bird information cards
+- [ ] Enhance audio recording UI
+  - Add waveform visualization
+  - Implement recording timer
+  - Add recording controls
+- [ ] Implement local storage
+  - Save recent recognitions
+  - Cache bird information
+  - Manage storage limits
 
 ## Phase 5: Enhanced Features
 
-- [ ] Add audio playback of recorded sound
-- [ ] Implement local storage for recent identifications
-- [ ] Add history viewing functionality
-- [ ] Enhance error messages and user feedback
+- [ ] Add audio playback
+- [ ] Implement history view
+- [ ] Add offline support
+- [ ] Enhance error handling
 
 ## Phase 6: Polish & Optimization
 
-- [ ] Optimize audio processing
-- [ ] Add loading animations and transitions
-- [ ] Implement proper error boundaries
-- [ ] Add offline capability warning
-- [ ] Test on different devices/browsers
+- [ ] Optimize WebAssembly initialization
+- [ ] Add loading animations
+- [ ] Implement error boundaries
+- [ ] Add offline warnings
+- [ ] Cross-browser testing
 
 ## Testing Strategy
 
 Each phase should be tested with:
 
 1. Unit tests for core functions
-2. Integration tests for API endpoints
+2. Integration tests for WebAssembly module
 3. End-to-end tests for user flows
-4. Manual testing on different devices
+4. Memory leak checks
 
 ## Monitoring & Debugging
 
 - Add logging for:
+  - WebAssembly initialization
   - Audio recording events
-  - API calls and responses
+  - Memory usage
   - Error states
 - Monitor:
-  - API response times
-  - Audio quality metrics
-  - Error rates
+  - Model initialization time
+  - Classification speed
+  - Memory consumption
 
 ## Success Criteria
 
 - Audio recording works reliably
-- Classification results are accurate
+- WebAssembly model initializes correctly
 - UI is responsive and intuitive
+- Memory usage is optimized
 - Error handling is comprehensive
-- History feature works as expected
 
 ## Non-Goals (Initial Implementation)
 
 - User accounts
-- Social sharing
-- Offline mode
-- Complex audio processing
+- Backend processing
+- Audio preprocessing
+- Model training interface
+- Test classification pipeline
 
-## Database Schema (MongoDB)
+## Bird Information Schema
 
 ```javascript
 Bird {
-  _id: ObjectId,
-  name: String,          // Common name
+  id: String,           // Unique identifier
+  name: String,         // Common name
   scientificName: String,
   description: Text,
   habitat: [String],
-  range: [String],
-  diet: [String],
   images: {
     primary: String,     // URL to main image
     additional: [String] // URLs to additional images
   },
   sounds: [{
-    url: String,         // URL to sound file
     type: String,        // e.g., "call", "song"
     description: String
   }],
@@ -141,7 +137,7 @@ Bird {
       winter: Boolean
     },
     conservationStatus: String,
-    averageSize: {
+    size: {
       length: Number,    // in cm
       wingspan: Number   // in cm
     }
@@ -149,19 +145,15 @@ Bird {
   modelInfo: {
     classLabel: String,  // Exact label used in Edge Impulse
     confidenceThreshold: Number
-  },
-  recognitionCount: { type: Number, default: 0 }  // Number of times this bird was recognized
+  }
 }
 ```
 
 ## Additional Dependencies
 
-Backend:
-
-- mongoose: MongoDB ODM
-- mongoose-unique-validator: Schema validation
-- mongodb-memory-server: Testing
-
 Frontend:
 
-- react-query: Data fetching
+- Edge Impulse WebAssembly runtime
+- React Query for data fetching
+- Web Audio API utilities
+- Local storage management
