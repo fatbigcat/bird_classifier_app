@@ -14,13 +14,13 @@ export default function HomePage() {
           </h1>
           <nav className="flex gap-4">
             <ThemeToggle />
-            <Link
+            {/* <Link
               to="/history"
               className="p-2 rounded-full bg-white/80 dark:bg-slate-800 shadow-sm hover:bg-white dark:hover:bg-slate-700 transition-colors"
             >
               <History className="w-5 h-5 text-green-700 dark:text-green-400" />
               <span className="sr-only">History</span>
-            </Link>
+            </Link> */}
             <Link
               to="/about"
               className="p-2 rounded-full bg-white/80 dark:bg-slate-800 shadow-sm hover:bg-white dark:hover:bg-slate-700 transition-colors"
@@ -54,12 +54,12 @@ export default function HomePage() {
             <RecordButton />
           </div>
 
-          <div className="w-full max-w-lg">
+          {/* <div className="w-full max-w-lg">
             <h3 className="text-lg font-medium text-slate-700 dark:text-slate-200 mb-4">
               Recent Identifications
             </h3>
             <RecentRecognitions />
-          </div>
+          </div> */}
         </main>
       </div>
     </div>
