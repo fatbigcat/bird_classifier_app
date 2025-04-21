@@ -23,8 +23,8 @@ class Bird(BaseModel):
     habitat: str
     recognitionCounter: int = 0
     imageUrl: Optional[str] = None
+    audioUrl: Optional[str] = None
 
-app = FastAPI()
 
 # Add CORS middleware
 app.add_middleware(

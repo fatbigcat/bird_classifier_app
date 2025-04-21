@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Play, Info, MapPin, AlertCircle } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
@@ -12,6 +12,7 @@ export default function ResultsPage() {
   const [birdData, setBirdData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const storedResult = sessionStorage.getItem("birdRecognitionResult");
@@ -211,7 +212,17 @@ export default function ResultsPage() {
                 </div>
                 <div className="p-6">
                   <div className="flex justify-center mb-6">
-                    <button className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-md transition-colors">
+                    <audio
+                      ref={audioRef}
+                      src={bird.audioUrl}
+                      className="hidden"
+                    />
+                    <button
+                      onClick={() => {
+                        audioRef.current?.play();
+                      }}
+                      className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-md transition-colors"
+                    >
                       <Play className="w-5 h-5" />
                       <span>Play Bird Call</span>
                     </button>

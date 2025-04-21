@@ -18,6 +18,7 @@ birds = [
         "habitat": "Freshwater ponds, lakes, marshes, and slow-flowing rivers with vegetation.",
         "recognitionCounter": 0,
         "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/2/2f/Tachybaptus_ruficollis_ruficollis.jpg",
+        "audioUrl": "/static/audio/maliponirek.mp3"
 
     },
     
@@ -29,6 +30,7 @@ birds = [
         "habitat": "Coastal regions, estuaries, inland lakes, and fields, often near human settlements.",
         "recognitionCounter": 0,
         "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/09/212_Common_Gull.jpg",
+        "audioUrl": "/static/audio/sivigaleb.mp3"
 
     },
     {
@@ -38,7 +40,8 @@ birds = [
         "description": "A small gull with a dark brown head (in summer), red bill and legs, and a distinctive loud call.",
         "habitat": "Wetlands, rivers, lakes, marshes, and also urban areas with accessible water sources.",
         "recognitionCounter": 0,
-        "imageUrl": "https://en.wikipedia.org/wiki/Black-headed_gull#/media/File:Chroicocephalus_ridibundus_(summer).jpg",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b4/Black-headed_Gull_%28Chroicocephalus_ridibundus%29.jpg",
+        "audioUrl": "/static/audio/recnigaleb.wav"
 
     },{
       "name": "sum",
