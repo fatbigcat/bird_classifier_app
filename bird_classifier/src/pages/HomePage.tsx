@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { History, Info, Volume2 } from "lucide-react";
 import RecordButton from "../components/RecordButton";
-import RecentRecognitions from "../components/RecentRecognitions";
+// import RecentRecognitions from "../components/RecentRecognitions";
 import ThemeToggle from "../components/ThemeToggle";
 
 export default function HomePage() {
@@ -45,7 +45,7 @@ export default function HomePage() {
               <div className="text-sm text-slate-700 dark:text-slate-300 text-left">
                 <span className="font-medium">For best results:</span> Record in
                 a quiet environment with minimal background noise. Hold your
-                device close to the bird sound source.
+                device close to the sound source.
               </div>
             </div>
           </div>

@@ -7,7 +7,6 @@ We're using a feature-focused vertical slice approach with iterative phases beca
 1. The existing codebase already has UI components and routing in place
 2. We need to integrate new functionality into existing components
 3. WebAssembly model deployment requires careful initialization and memory management
-4. Focus on simple recording functionality first
 
 ## Phase 1: Audio Recording Core (Frontend)
 
@@ -111,43 +110,6 @@ Each phase should be tested with:
 - Audio preprocessing
 - Model training interface
 - Test classification pipeline
-
-## Bird Information Schema
-
-```javascript
-Bird {
-  id: String,           // Unique identifier
-  name: String,         // Common name
-  scientificName: String,
-  description: Text,
-  habitat: [String],
-  images: {
-    primary: String,     // URL to main image
-    additional: [String] // URLs to additional images
-  },
-  sounds: [{
-    type: String,        // e.g., "call", "song"
-    description: String
-  }],
-  metadata: {
-    seasonalActivity: {
-      spring: Boolean,
-      summer: Boolean,
-      autumn: Boolean,
-      winter: Boolean
-    },
-    conservationStatus: String,
-    size: {
-      length: Number,    // in cm
-      wingspan: Number   // in cm
-    }
-  },
-  modelInfo: {
-    classLabel: String,  // Exact label used in Edge Impulse
-    confidenceThreshold: Number
-  }
-}
-```
 
 ## Additional Dependencies
 

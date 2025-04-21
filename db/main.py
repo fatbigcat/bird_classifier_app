@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pymongo import MongoClient
 from bson.objectid import ObjectId
@@ -16,11 +17,19 @@ class Bird(BaseModel):
     soundLabel: str
     description: str
     habitat: str
-    
     recognitionCounter: int = 0
     imageUrl: Optional[str] = None
 
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Your React app's URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/birds/{label}", response_model=Bird)
 def get_bird_by_label(label: str):
@@ -35,3 +44,13 @@ def add_bird(bird: Bird):
         raise HTTPException(status_code=400, detail="Bird already exists")
     result = collection.insert_one(bird.dict())
     return {"message": "Bird added", "id": str(result.inserted_id)}
+
+@app.post("/birds/{label}/recognised")
+def increment_recognition(label: str):
+    result = collection.update_one(
+        {"soundLabel": label},
+        {"$inc": {"recognitionCounter": 1}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Bird not found")
+    return {"message": f"Recognition count incremented for '{label}'"}
