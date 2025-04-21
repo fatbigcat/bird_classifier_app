@@ -4,7 +4,11 @@ from pydantic import BaseModel
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from typing import Optional
+from fastapi.staticfiles import StaticFiles
 
+#serve static files
+app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 # Connect to MongoDB (local)
 client = MongoClient("mongodb://localhost:27017/")
 db = client.birdDB
@@ -35,6 +39,7 @@ app.add_middleware(
 def get_bird_by_label(label: str):
     bird = collection.find_one({"soundLabel": label})
     if bird:
+        bird["audioUrl"] = f"http://localhost:8000/static/audio/{label}.mp3"
         return Bird(**bird)
     raise HTTPException(status_code=404, detail="Bird not found")
 
