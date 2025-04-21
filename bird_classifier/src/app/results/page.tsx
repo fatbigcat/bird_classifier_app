@@ -7,15 +7,11 @@ import ThemeToggle from "../../components/ThemeToggle";
 
 // Define types for our Edge Impulse response
 interface EdgeImpulseResult {
-  success: boolean;
-  result: {
-    classification: Record<string, number>;
-    timing: {
-      dsp: number;
-      classification: number;
-      anomaly: number;
-    };
-  };
+  anomaly: number;
+  results: Array<{
+    label: string;
+    value: number;
+  }>;
 }
 
 // Bird data mapping
@@ -82,61 +78,85 @@ export default function ResultsPage() {
   useEffect(() => {
     // Try to get the recognition result from sessionStorage
     const storedResult = sessionStorage.getItem("birdRecognitionResult");
+    console.log("Stored result:", storedResult);
 
     if (storedResult) {
       try {
         const parsedResult = JSON.parse(storedResult);
+        console.log("Parsed result:", parsedResult);
+
+        // Validate the parsed result structure
+        if (!Array.isArray(parsedResult.results)) {
+          throw new Error("Invalid classification result format");
+        }
+
+        // Check if we have any predictions
+        if (parsedResult.results.length === 0) {
+          throw new Error("No bird classifications found in the result");
+        }
+
+        // Check if any bird has a confidence > 0
+        const hasValidPrediction = parsedResult.results.some(
+          (result: { value: number }) => result.value > 0
+        );
+        if (!hasValidPrediction) {
+          throw new Error("No confident predictions found");
+        }
+
         setRecognitionResult(parsedResult);
       } catch (err) {
-        console.error("Error parsing stored result:", err);
-        setError("Could not load recognition results");
+        console.error("Error processing result:", err);
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Could not process the recognition results"
+        );
       }
     } else {
-      // If no result is found, we'll use demo data for testing
-      // In a real app, you might want to redirect back to the recording page
-      setRecognitionResult({
-        success: true,
-        result: {
-          classification: {
-            "American Robin": 0.98,
-            "Northern Cardinal": 0.01,
-            "Blue Jay": 0.005,
-            "House Sparrow": 0.003,
-            "European Starling": 0.002,
-          },
-          timing: {
-            dsp: 15,
-            classification: 28,
-            anomaly: 0,
-          },
-        },
-      });
+      // If no result is found, redirect back to recording
+      navigate("/");
     }
 
     setLoading(false);
   }, [navigate]);
 
-  // Get the top bird prediction
+  // Get the top bird prediction with additional validation
   const getTopBird = () => {
-    if (!recognitionResult?.success) return null;
+    if (!recognitionResult?.results) {
+      console.log("No recognition results");
+      return null;
+    }
 
-    const classifications = recognitionResult.result.classification;
-    let topBirdName = "";
-    let topConfidence = 0;
+    console.log("Processing results:", recognitionResult.results);
 
-    Object.entries(classifications).forEach(([name, confidence]) => {
-      if (confidence > topConfidence) {
-        topBirdName = name;
-        topConfidence = confidence;
-      }
-    });
+    // Find the prediction with highest confidence
+    const topPrediction = recognitionResult.results.reduce((top, current) => {
+      return current.value > (top?.value || 0) ? current : top;
+    }, recognitionResult.results[0]);
 
-    if (!topBirdName || !birdDatabase[topBirdName]) return null;
+    if (!topPrediction) {
+      console.log("No predictions found");
+      return null;
+    }
+
+    console.log("Top prediction:", topPrediction);
+
+    // Validate confidence threshold
+    if (topPrediction.value < 0.1) {
+      console.log("Top confidence too low:", topPrediction.value);
+      return null;
+    }
+
+    // Look up bird details in database
+    if (!birdDatabase[topPrediction.label]) {
+      console.log("Bird not found in database:", topPrediction.label);
+      return null;
+    }
 
     return {
-      name: topBirdName,
-      confidence: Math.round(topConfidence * 100),
-      ...birdDatabase[topBirdName],
+      name: topPrediction.label,
+      confidence: Math.round(topPrediction.value * 100),
+      ...birdDatabase[topPrediction.label],
     };
   };
 
@@ -201,13 +221,13 @@ export default function ResultsPage() {
 
   // Get other predictions for display
   const getOtherPredictions = () => {
-    if (!recognitionResult?.success) return [];
+    if (!recognitionResult?.results) return [];
 
-    return Object.entries(recognitionResult.result.classification)
-      .filter(([name]) => name !== bird.name)
-      .map(([name, confidence]) => ({
-        name,
-        confidence: Math.round(confidence * 100),
+    return recognitionResult.results
+      .filter((result) => result.label !== getTopBird()?.name)
+      .map((result) => ({
+        name: result.label,
+        confidence: Math.round(result.value * 100),
       }))
       .sort((a, b) => b.confidence - a.confidence)
       .slice(0, 3); // Get top 3 other predictions

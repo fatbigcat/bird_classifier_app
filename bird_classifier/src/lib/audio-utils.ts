@@ -1,23 +1,4 @@
 /**
- * Prepares audio data for Edge Impulse API
- * This is a simplified implementation - you might need to adjust based on
- * Edge Impulse's specific requirements for your project
- */
-export async function prepareAudioForEdgeImpulse(
-  audioBlob: Blob
-): Promise<Blob> {
-  // In a real implementation, you might need to:
-  // 1. Convert to the right format (e.g., WAV)
-  // 2. Resample to the right frequency
-  // 3. Adjust channels (mono/stereo)
-  // 4. Trim to the right length
-
-  // This is a placeholder that just returns the original blob
-  // You would replace this with actual audio processing
-  return audioBlob;
-}
-
-/**
  * Creates an audio element to play the recorded audio
  */
 export function createAudioPlayer(audioBlob: Blob): HTMLAudioElement {

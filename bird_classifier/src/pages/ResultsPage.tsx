@@ -5,69 +5,42 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Play, Info, MapPin, AlertCircle } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 
-// Define types for our Edge Impulse response
-interface EdgeImpulseResult {
-  success: boolean;
-  result: {
-    classification: Record<string, number>;
-    timing: {
-      dsp: number;
-      classification: number;
-      anomaly: number;
-    };
-  };
-}
-
 // Bird data mapping
 const birdDatabase: Record<string, any> = {
-  "American Robin": {
-    scientificName: "Turdus migratorius",
-    description:
-      "The American Robin is a migratory songbird of the true thrush genus and Turdidae, the wider thrush family. It is widely distributed throughout North America, wintering from southern Canada to central Mexico and along the Pacific Coast.",
-    habitat: "Woodlands, gardens, parks, yards",
-    range: "Throughout North America",
-    diet: "Earthworms, insects, berries",
-    imageUrl: "/robin-foraging.png",
-    audioUrl: "#", // In a real app, this would be a URL to the bird's call audio
-  },
-  "Northern Cardinal": {
-    scientificName: "Cardinalis cardinalis",
-    description:
-      "The Northern Cardinal is a distinctive, medium-sized songbird with a bright red crest, body, and tail. Males are more vibrantly colored than females, which have a more brownish-red appearance with red accents.",
-    habitat: "Gardens, shrublands, forest edges",
-    range: "Eastern and Central United States, Mexico",
-    diet: "Seeds, fruits, insects",
-    imageUrl: "/cardinal-on-snowy-branch.png",
+  "maliponirek": {
+    scientificName: "Tachybaptus ruficollis",
+    description: "The Little Grebe is a small water bird from the grebe family. It's one of the smallest members of its family and is known for its excellent diving abilities. In breeding plumage, it has a reddish neck, cheeks and flanks.",
+    habitat: "Freshwater ponds, lakes, slow-moving rivers",
+    range: "Europe, Asia, Africa",
+    diet: "Small fish, aquatic insects, mollusks",
+    imageUrl: "/little-grebe.png",
     audioUrl: "#",
   },
-  "Blue Jay": {
-    scientificName: "Cyanocitta cristata",
-    description:
-      "The Blue Jay is a passerine bird in the family Corvidae, native to eastern North America. It is resident through most of eastern and central United States and southern Canada.",
-    habitat: "Forests, suburban areas, parks",
-    range: "Eastern and Central North America",
-    diet: "Nuts, seeds, insects, small vertebrates",
-    imageUrl: "/blue-jay-perched.png",
+  "recnigaleb": {
+    scientificName: "Chroicocephalus ridibundus",
+    description: "The Black-headed Gull is a small gull that is most widely spread throughout Europe and Asia. During breeding season, it has a distinctive dark brown head (not actually black) with white eye-rings.",
+    habitat: "Coastal areas, inland waters, urban areas",
+    range: "Europe, Asia, parts of North America",
+    diet: "Fish, insects, worms, scraps",
+    imageUrl: "/black-headed-gull.png",
     audioUrl: "#",
   },
-  "House Sparrow": {
-    scientificName: "Passer domesticus",
-    description:
-      "The House Sparrow is a small bird of the sparrow family Passeridae. It's one of the most widely distributed wild birds globally and is closely associated with human habitation.",
-    habitat: "Urban and rural areas near human settlements",
-    range: "Worldwide (introduced to many regions)",
-    diet: "Seeds, grains, insects, food scraps",
-    imageUrl: "/house-sparrow-perched.png",
+  "sivigaleb": {
+    scientificName: "Larus argentatus",
+    description: "The Herring Gull is a large gull species with silvery-grey back and wings, white head and underparts, and pink legs. It's one of the best known of all gulls along the coasts of Northern Europe.",
+    habitat: "Coastal regions, harbors, urban areas",
+    range: "Northern Europe, North America",
+    diet: "Fish, marine invertebrates, carrion",
+    imageUrl: "/herring-gull.png",
     audioUrl: "#",
   },
-  "European Starling": {
-    scientificName: "Sturnus vulgaris",
-    description:
-      "The European Starling is a medium-sized passerine bird in the starling family. It is about 20 cm long and has glossy black plumage with a metallic sheen, which is speckled with white at some times of year.",
-    habitat: "Urban areas, farmland, open woodlands",
-    range: "Europe, Asia, North America (introduced)",
-    diet: "Insects, fruits, seeds, human food waste",
-    imageUrl: "/european-starling.png",
+  "sum": {
+    scientificName: "Bubo bubo",
+    description: "The Eurasian Eagle-Owl is one of the largest owl species in the world. It has distinctive ear tufts, powerful talons, and striking orange eyes. Despite its size, it can move silently through the night.",
+    habitat: "Forests, rocky areas, mountains",
+    range: "Europe and Asia",
+    diet: "Small mammals, other birds, amphibians",
+    imageUrl: "/eagle-owl.png",
     audioUrl: "#",
   },
 };
@@ -82,65 +55,104 @@ export default function ResultsPage() {
   useEffect(() => {
     // Try to get the recognition result from sessionStorage
     const storedResult = sessionStorage.getItem("birdRecognitionResult");
+    console.log("Stored result:", storedResult);
 
     if (storedResult) {
       try {
         const parsedResult = JSON.parse(storedResult);
+        console.log("Parsed result:", parsedResult);
+
+        // Validate the parsed result structure
+        if (!Array.isArray(parsedResult.results)) {
+          throw new Error("Invalid classification result format");
+        }
+
+        // Check if we have any predictions
+        if (parsedResult.results.length === 0) {
+          throw new Error("No bird classifications found in the result");
+        }
+
+        // Check if any bird has a confidence > 0
+        const hasValidPrediction = parsedResult.results.some(
+          (result: { value: number }) => result.value > 0
+        );
+        if (!hasValidPrediction) {
+          throw new Error("No confident predictions found");
+        }
+
         setRecognitionResult(parsedResult);
       } catch (err) {
-        console.error("Error parsing stored result:", err);
-        setError("Could not load recognition results");
+        console.error("Error processing result:", err);
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Could not process the recognition results"
+        );
       }
     } else {
-      // If no result is found, we'll use demo data for testing
-      // In a real app, you might want to redirect back to the recording page
-      setRecognitionResult({
-        success: true,
-        result: {
-          classification: {
-            "American Robin": 0.98,
-            "Northern Cardinal": 0.01,
-            "Blue Jay": 0.005,
-            "House Sparrow": 0.003,
-            "European Starling": 0.002,
-          },
-          timing: {
-            dsp: 15,
-            classification: 28,
-            anomaly: 0,
-          },
-        },
-      });
+      // If no result is found, redirect back to recording
+      navigate("/");
     }
 
     setLoading(false);
   }, [navigate]);
 
-  // Get the top bird prediction
+  // Get the top bird prediction with additional validation
   const getTopBird = () => {
-    if (!recognitionResult?.success) return null;
+    if (!recognitionResult?.results) {
+      console.log("No recognition results");
+      return null;
+    }
 
-    const classifications = recognitionResult.result.classification;
-    let topBirdName = "";
-    let topConfidence = 0;
+    console.log("Processing results:", recognitionResult.results);
 
-    Object.entries(classifications).forEach(([name, confidence]) => {
-      if (confidence > topConfidence) {
-        topBirdName = name;
-        topConfidence = confidence;
-      }
-    });
+    // Find the prediction with highest confidence
+    const topPrediction = recognitionResult.results.reduce((top, current) => {
+      return current.value > (top?.value || 0) ? current : top;
+    }, recognitionResult.results[0]);
 
-    if (!topBirdName || !birdDatabase[topBirdName]) return null;
+    if (!topPrediction) {
+      console.log("No predictions found");
+      return null;
+    }
+
+    console.log("Top prediction:", topPrediction);
+
+    // Validate confidence threshold
+    if (topPrediction.value < 0.1) {
+      console.log("Top confidence too low:", topPrediction.value);
+      return null;
+    }
+
+    // Look up bird details in database
+    if (!birdDatabase[topPrediction.label]) {
+      console.log("Bird not found in database:", topPrediction.label);
+      return null;
+    }
 
     return {
-      name: topBirdName,
-      confidence: Math.round(topConfidence * 100),
-      ...birdDatabase[topBirdName],
+      name: topPrediction.label,
+      confidence: Math.round(topPrediction.value * 100),
+      ...birdDatabase[topPrediction.label],
     };
   };
 
+  // Get other predictions for display
+  const getOtherPredictions = () => {
+    if (!recognitionResult?.results) return [];
+
+    return recognitionResult.results
+      .filter((result) => result.label !== getTopBird()?.name)
+      .map((result) => ({
+        name: result.label,
+        confidence: Math.round(result.value * 100),
+      }))
+      .sort((a, b) => b.confidence - a.confidence)
+      .slice(0, 3); // Get top 3 other predictions
+  };
+
   const bird = getTopBird();
+  const otherPredictions = getOtherPredictions();
 
   if (loading) {
     return (
@@ -198,22 +210,6 @@ export default function ResultsPage() {
       </div>
     );
   }
-
-  // Get other predictions for display
-  const getOtherPredictions = () => {
-    if (!recognitionResult?.success) return [];
-
-    return Object.entries(recognitionResult.result.classification)
-      .filter(([name]) => name !== bird.name)
-      .map(([name, confidence]) => ({
-        name,
-        confidence: Math.round(confidence * 100),
-      }))
-      .sort((a, b) => b.confidence - a.confidence)
-      .slice(0, 3); // Get top 3 other predictions
-  };
-
-  const otherPredictions = getOtherPredictions();
 
   return (
     <div className="min-h-screen bg-gradient-green-blue">

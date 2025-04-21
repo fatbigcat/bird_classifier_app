@@ -1,34 +1,62 @@
-import type { EdgeImpulseModule } from "src/edge-impulse";
+import type { EdgeImpulseModule, EdgeImpulseClassifierResult } from "src/edge-impulse";
 
 // Initialize the WebAssembly module
 declare const Module: EdgeImpulseModule;
 
-let classifierInitialized = false;
-
-Module.onRuntimeInitialized = function () {
-  classifierInitialized = true;
-};
-
 export class EdgeImpulseClassifier {
-  _initialized = false;
+  private _initialized = false;
+  private readonly REQUIRED_SAMPLES = 48000;
 
   async init() {
-    if (classifierInitialized) {
+    if (this._initialized) {
       return Promise.resolve();
     }
 
-    return new Promise<void>((resolve) => {
+    // If Module is already loaded, resolve immediately
+    if ((Module as any).asm) {
+      this._initialized = true;
+      Module.init();
+      return Promise.resolve();
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      const existingCallback = Module.onRuntimeInitialized;
+      
       Module.onRuntimeInitialized = () => {
-        classifierInitialized = true;
-        Module.init();
-        resolve();
+        try {
+          // Call any existing callback first
+          if (existingCallback) {
+            existingCallback();
+          }
+          
+          this._initialized = true;
+          Module.init();
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
       };
     });
   }
 
-  classify(rawData: Float32Array, debug = false) {
-    if (!classifierInitialized) {
+  classify(rawData: Float32Array, debug = false): EdgeImpulseClassifierResult {
+    if (!this._initialized) {
       throw new Error("Module is not initialized");
+    }
+
+    if (!(rawData instanceof Float32Array)) {
+      throw new Error("Input must be Float32Array");
+    }
+
+    if (rawData.length !== this.REQUIRED_SAMPLES) {
+      throw new Error(`Input must be exactly ${this.REQUIRED_SAMPLES} samples, got ${rawData.length}`);
+    }
+
+    // Validate data range is within [-1, 1]
+    for (let i = 0; i < rawData.length; i++) {
+      if (Math.abs(rawData[i]) > 1) {
+        throw new Error("Input data must be normalized between -1 and 1");
+      }
     }
 
     const obj = this._arrayToHeap(rawData);
@@ -43,31 +71,27 @@ export class EdgeImpulseClassifier {
       throw new Error(`Classification failed (err code: ${ret.result})`);
     }
 
-    const jsResult = {
+    const jsResult: EdgeImpulseClassifierResult = {
       anomaly: ret.anomaly,
       results: [],
     };
 
+    // Process all classifications and format them as expected
     for (let cx = 0; cx < ret.size(); cx++) {
       const c = ret.get(cx);
       jsResult.results.push({
         label: c.label,
-        value: c.value,
-        x: c.x,
-        y: c.y,
-        width: c.width,
-        height: c.height,
+        value: c.value
       });
       c.delete();
     }
 
     ret.delete();
-
     return jsResult;
   }
 
   getProperties() {
-    if (!classifierInitialized) {
+    if (!this._initialized) {
       throw new Error("Module is not initialized");
     }
     return Module.get_properties();

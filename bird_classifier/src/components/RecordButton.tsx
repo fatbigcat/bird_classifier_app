@@ -2,73 +2,70 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mic, StopCircle } from "lucide-react";
+import { Mic, Square } from "lucide-react";
 import { cn } from "../lib/utils";
-
-interface DemoResponse {
-  success: boolean;
-  result: {
-    classification: Record<string, number>;
-    timing: {
-      dsp: number;
-      classification: number;
-      anomaly: number;
-    };
-  };
-}
+import { EdgeImpulseClassifier } from "../EdgeImpulseClassifier";
 
 export default function RecordButton() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [demoResponse, setDemoResponse] = useState<DemoResponse | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  // Constants matching Edge Impulse configuration
+  const SAMPLE_RATE = 48000; // 48kHz sample rate
+  const WINDOW_SIZE = 48000; // 1 second window (48000 samples)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
+  const classifierRef = useRef<EdgeImpulseClassifier | null>(null);
   const navigate = useNavigate();
 
-  // For development/testing
-  const useDemoResponse = async (): Promise<DemoResponse> => {
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    return {
-      success: true,
-      result: {
-        classification: {
-          "American Robin": 0.98,
-          "Northern Cardinal": 0.01,
-          "Blue Jay": 0.005,
-          "House Sparrow": 0.003,
-          "European Starling": 0.002,
-        },
-        timing: {
-          dsp: 15,
-          classification: 28,
-          anomaly: 0,
-        },
-      },
-    };
-  };
-
+  // Initialize Edge Impulse classifier
   useEffect(() => {
-    let mounted = true;
+    const initClassifier = async () => {
+      try {
+        setError(null);
 
-    const fetchDemoResponse = async () => {
-      const response = await useDemoResponse();
-      if (mounted) {
-        setDemoResponse(response);
+        if (typeof (window as any).Module === "undefined") {
+          throw new Error("Edge Impulse Module not loaded. Please refresh the page.");
+        }
+
+        if (!classifierRef.current) {
+          const classifier = new EdgeImpulseClassifier();
+          classifierRef.current = classifier;
+        }
+
+        await classifierRef.current.init();
+        console.log("Classifier initialized successfully");
+        setIsInitializing(false);
+
+        // Create AudioContext with required sample rate
+        if (!audioContextRef.current) {
+          audioContextRef.current = new AudioContext({ sampleRate: SAMPLE_RATE });
+        }
+      } catch (err) {
+        console.error("Failed to initialize classifier:", err);
+        setError(err instanceof Error ? err.message : "Failed to initialize audio processing.");
+        setIsInitializing(false);
       }
     };
 
-    fetchDemoResponse();
+    initClassifier();
 
     return () => {
-      mounted = false;
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
       stopRecording();
+
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
     };
   }, []);
 
@@ -76,19 +73,27 @@ export default function RecordButton() {
     try {
       setError(null);
 
-      // Request microphone permission
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!classifierRef.current) {
+        throw new Error("Classifier not initialized");
+      }
 
-      // Create media recorder with optimized settings for Edge Impulse
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: "audio/webm", // Most compatible format
-        audioBitsPerSecond: 128000, // 128kbps audio quality
+      // Request microphone access with specific constraints
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1, // Mono audio
+          sampleRate: SAMPLE_RATE,
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
       });
+
+      // Create MediaRecorder instance
+      const mediaRecorder = new MediaRecorder(stream);
 
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
-      // Set up event handlers
+      // Handle incoming audio data
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
@@ -100,15 +105,14 @@ export default function RecordButton() {
       };
 
       // Start recording
-      mediaRecorder.start(100); // Collect data every 100ms for smoother streaming if needed
+      mediaRecorder.start(100); // Collect data every 100ms
       setIsRecording(true);
       setRecordingDuration(0);
 
-      // Start timer
+      // Update duration and stop after 2 seconds (to ensure we get enough samples)
       timerRef.current = window.setInterval(() => {
         setRecordingDuration((prev) => {
-          // Auto-stop after 10 seconds
-          if (prev >= 10) {
+          if (prev >= 2) {
             stopRecording();
             return 0;
           }
@@ -119,30 +123,21 @@ export default function RecordButton() {
       console.error("Error accessing microphone:", err);
       if (err instanceof DOMException && err.name === "NotAllowedError") {
         setPermissionDenied(true);
-        setError(
-          "Microphone access denied. Please allow microphone access to use this feature."
-        );
+        setError("Microphone access denied. Please allow microphone access to use this feature.");
       } else {
-        setError(
-          "Could not access microphone. Please check your device settings."
-        );
+        setError("Could not access microphone. Please check your device settings.");
       }
     }
   };
 
   const stopRecording = () => {
-    if (
-      mediaRecorderRef.current &&
-      mediaRecorderRef.current.state !== "inactive"
-    ) {
+    // Stop MediaRecorder if it's recording
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop();
-
-      // Stop all audio tracks
-      mediaRecorderRef.current.stream
-        .getTracks()
-        .forEach((track) => track.stop());
+      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
     }
 
+    // Clear timer
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -153,55 +148,107 @@ export default function RecordButton() {
 
   const processRecording = async () => {
     try {
+      if (!classifierRef.current) {
+        throw new Error("Classifier not initialized");
+      }
+
       if (audioChunksRef.current.length === 0) {
-        setError("No audio recorded. Please try again.");
-        return;
+        throw new Error("No audio recorded");
       }
 
-      const audioBlob = new Blob(audioChunksRef.current, {
-        type: "audio/webm",
-      });
-
-      const formData = new FormData();
-      formData.append("audio", audioBlob, "bird_sound.webm");
-
-      // Use the backend API endpoint instead of calling Edge Impulse directly
-      const response = await fetch("http://localhost:3000/api/classify", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API error: ${response.status} - ${errorText}`);
+      // Create AudioContext if not exists
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContext({ sampleRate: SAMPLE_RATE });
       }
 
-      const result = await response.json();
+      // Convert blob to array buffer
+      const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
 
-      // For development, use demo response if API call fails
-      const finalResult = response.ok ? result : demoResponse;
-      sessionStorage.setItem(
-        "birdRecognitionResult",
-        JSON.stringify(finalResult)
+      // Validate sample rate
+      if (audioBuffer.sampleRate !== SAMPLE_RATE) {
+        throw new Error(`Invalid sample rate: ${audioBuffer.sampleRate}Hz. Required: ${SAMPLE_RATE}Hz`);
+      }
+
+      // Get raw audio data (first channel)
+      const rawAudio = audioBuffer.getChannelData(0);
+
+      // Ensure we have more than enough samples (we need exactly WINDOW_SIZE)
+      if (rawAudio.length < WINDOW_SIZE) {
+        throw new Error(`Recording too short - got ${rawAudio.length} samples, need exactly ${WINDOW_SIZE}`);
+      }
+
+      // Take exactly WINDOW_SIZE samples from the middle of the recording
+      const midPoint = Math.floor(rawAudio.length / 2);
+      const startIdx = Math.max(0, midPoint - Math.floor(WINDOW_SIZE / 2));
+      const audioWindow = rawAudio.slice(startIdx, startIdx + WINDOW_SIZE);
+
+      // Verify we got exactly WINDOW_SIZE samples
+      if (audioWindow.length !== WINDOW_SIZE) {
+        throw new Error(`Invalid sample count after windowing: ${audioWindow.length}. Required: ${WINDOW_SIZE}`);
+      }
+
+      // Create output array and normalize to [-1, 1]
+      const normalizedAudio = new Float32Array(WINDOW_SIZE);
+      let maxAmp = 0;
+
+      // Find max amplitude
+      for (let i = 0; i < audioWindow.length; i++) {
+        maxAmp = Math.max(maxAmp, Math.abs(audioWindow[i]));
+      }
+
+      // Ensure we have some audio signal
+      if (maxAmp < 0.01) {
+        throw new Error("Audio signal too weak - please record in a quieter environment");
+      }
+
+      // Normalize to range [-1, 1]
+      const scale = maxAmp > 0 ? 1.0 / maxAmp : 1.0;
+      for (let i = 0; i < WINDOW_SIZE; i++) {
+        normalizedAudio[i] = audioWindow[i] * scale;
+      }
+
+      // Final validation of sample count and range
+      if (normalizedAudio.length !== WINDOW_SIZE) {
+        throw new Error(`Final sample count invalid: ${normalizedAudio.length}`);
+      }
+
+      // Verify normalization
+      for (let i = 0; i < normalizedAudio.length; i++) {
+        if (Math.abs(normalizedAudio[i]) > 1) {
+          throw new Error("Normalization failed - values outside [-1, 1] range");
+        }
+      }
+
+      // Run classification with validated data
+      const result = classifierRef.current.classify(normalizedAudio);
+      console.log("Classification result:", result);
+
+      // Validate the classification result
+      if (!result || !Array.isArray(result.results)) {
+        throw new Error("Invalid classification result format");
+      }
+
+      // Check if we have any predictions
+      if (result.results.length === 0) {
+        throw new Error("No bird classifications found");
+      }
+
+      // Check if any bird has a confidence > 0
+      const hasValidPrediction = result.results.some(
+        (prediction) => prediction.value > 0
       );
+      if (!hasValidPrediction) {
+        throw new Error("No birds could be identified from this recording");
+      }
 
+      // Store result directly - it's already in the correct format
+      sessionStorage.setItem("birdRecognitionResult", JSON.stringify(result));
       navigate("/results");
     } catch (err) {
       console.error("Error processing recording:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Error processing the recording. Please try again."
-      );
-
-      // Use demo response as fallback in development
-      if (process.env.NODE_ENV === "development" && demoResponse) {
-        sessionStorage.setItem(
-          "birdRecognitionResult",
-          JSON.stringify(demoResponse)
-        );
-        navigate("/results");
-      }
+      setError(err instanceof Error ? err.message : "Error processing the recording. Please try again.");
     }
   };
 
@@ -215,39 +262,40 @@ export default function RecordButton() {
 
       <button
         onClick={isRecording ? stopRecording : startRecording}
-        disabled={permissionDenied}
+        disabled={permissionDenied || isInitializing}
         className={cn(
-          "relative w-24 h-24 md:w-32 md:h-32 rounded-full flex items-center justify-center",
-          "bg-green-600 hover:bg-green-700 active:bg-green-800 transition-all",
-          "disabled:bg-slate-400 disabled:cursor-not-allowed",
-          "shadow-lg hover:shadow-xl",
-          isRecording && "animate-pulse"
+          "relative w-24 h-24 rounded-full",
+          "transition-colors duration-200",
+          "flex items-center justify-center",
+          "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500",
+          isRecording
+            ? "bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+            : permissionDenied || isInitializing
+            ? "bg-gray-300 dark:bg-gray-700 cursor-not-allowed"
+            : "bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
         )}
-        aria-label={isRecording ? "Stop recording" : "Start recording"}
       >
-        {isRecording ? (
-          <StopCircle className="w-12 h-12 md:w-16 md:h-16 text-white" />
+        {isInitializing ? (
+          <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+        ) : isRecording ? (
+          <Square className="w-8 h-8 text-white" />
         ) : (
-          <Mic className="w-12 h-12 md:w-16 md:h-16 text-white" />
+          <Mic className="w-8 h-8 text-white" />
         )}
 
         {isRecording && (
           <>
-            <div className="absolute inset-0 rounded-full border-4 border-green-400 animate-ping" />
-            <div className="absolute -inset-4 rounded-full border-2 border-green-400/50 animate-ping animation-delay-300" />
-            <div className="absolute -inset-8 rounded-full border border-green-400/30 animate-ping animation-delay-600" />
+            <div className="absolute -inset-1 rounded-full border-4 border-red-500/30 animate-ping" />
+            <div className="absolute -inset-4 rounded-full border-2 border-red-400/20 animate-ping animation-delay-300" />
+            <div className="absolute -inset-8 rounded-full border border-red-400/30 animate-ping animation-delay-600" />
           </>
         )}
       </button>
 
       {isRecording && (
         <div className="mt-6 text-center">
-          <div className="text-lg font-medium text-green-700 dark:text-green-400">
-            Listening...
-          </div>
-          <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-            {recordingDuration} seconds
-          </div>
+          <div className="text-lg font-medium text-green-700 dark:text-green-400">Listening...</div>
+          <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">{recordingDuration} seconds</div>
         </div>
       )}
 
@@ -260,8 +308,7 @@ export default function RecordButton() {
       {permissionDenied && (
         <div className="mt-4 text-center max-w-xs">
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Please enable microphone access in your browser settings to use this
-            feature.
+            Please enable microphone access in your browser settings to use this feature.
           </p>
         </div>
       )}

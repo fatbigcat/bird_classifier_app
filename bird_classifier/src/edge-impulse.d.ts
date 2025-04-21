@@ -92,28 +92,5 @@ interface EdgeImpulseClassifierResult {
   results: {
     label: string;
     value: number;
-    x?: number;
-    y?: number;
-    width?: number;
-    height?: number;
-  }[];
-  visual_ad_grid_cells?: {
-    label: string;
-    value: number;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  }[];
-  visual_ad_max?: number;
-  visual_ad_mean?: number;
-  object_tracking_results?: {
-    object_id: number;
-    label: string;
-    value: number;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
   }[];
 }
