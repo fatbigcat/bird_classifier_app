@@ -35,6 +35,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/birds/", response_model=list[Bird])
+def get_all_birds():
+    birds = []
+    for bird_doc in collection.find():
+        # Ensure ObjectId is converted to string if needed, though Pydantic might handle it
+        # Construct URLs if necessary
+        if "soundLabel" in bird_doc:
+             bird_doc["audioUrl"] = f"http://localhost:8000/static/audio/{bird_doc['soundLabel']}.mp3"
+        # Add image URL construction if applicable and stored in DB
+        # bird_doc["imageUrl"] = f"http://localhost:8000/static/images/{bird_doc['image_filename']}"
+        birds.append(Bird(**bird_doc))
+    return birds
+
 @app.get("/birds/{label}", response_model=Bird)
 def get_bird_by_label(label: str):
     bird = collection.find_one({"soundLabel": label})

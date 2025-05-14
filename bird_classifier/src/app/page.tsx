@@ -3,6 +3,7 @@ import { History, Info, Volume2, Settings } from "lucide-react";
 import RecordButton from "../components/RecordButton";
 import RecentRecognitions from "../components/RecentRecognitions";
 import ThemeToggle from "../components/ThemeToggle";
+// Removed BirdGallery import
 
 export default function HomePage() {
   return (
@@ -64,11 +65,13 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="mb-16 flex justify-center">
+          {/* Record Button */}
+          <div className="mb-8 flex justify-center"> {/* Reduced bottom margin */}
             <RecordButton />
           </div>
 
-          <div className="w-full max-w-lg">
+          {/* Recent Identifications Section */}
+          <div className="w-full max-w-lg mt-16"> {/* Added margin-top back */}
             <h3 className="text-lg font-medium text-slate-700 dark:text-slate-200 mb-4">
               Recent Identifications
             </h3>

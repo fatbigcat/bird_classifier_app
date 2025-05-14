@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom"; // Import useLocation
 import { ArrowLeft, Play, Info, MapPin, AlertCircle } from "lucide-react";
 import ThemeToggle from "../../components/ThemeToggle";
+
+const API_BASE_URL = "http://localhost:8000"; // Define API base URL
 
 // Define types for our Edge Impulse response
 interface EdgeImpulseResult {
@@ -14,153 +16,102 @@ interface EdgeImpulseResult {
   }>;
 }
 
-// Bird data mapping
-const birdDatabase: Record<string, any> = {
-  "American Robin": {
-    scientificName: "Turdus migratorius",
-    description:
-      "The American Robin is a migratory songbird of the true thrush genus and Turdidae, the wider thrush family. It is widely distributed throughout North America, wintering from southern Canada to central Mexico and along the Pacific Coast.",
-    habitat: "Woodlands, gardens, parks, yards",
-    range: "Throughout North America",
-    diet: "Earthworms, insects, berries",
-    imageUrl: "/robin-foraging.png",
-    audioUrl: "#", // In a real app, this would be a URL to the bird's call audio
-  },
-  "Northern Cardinal": {
-    scientificName: "Cardinalis cardinalis",
-    description:
-      "The Northern Cardinal is a distinctive, medium-sized songbird with a bright red crest, body, and tail. Males are more vibrantly colored than females, which have a more brownish-red appearance with red accents.",
-    habitat: "Gardens, shrublands, forest edges",
-    range: "Eastern and Central United States, Mexico",
-    diet: "Seeds, fruits, insects",
-    imageUrl: "/cardinal-on-snowy-branch.png",
-    audioUrl: "#",
-  },
-  "Blue Jay": {
-    scientificName: "Cyanocitta cristata",
-    description:
-      "The Blue Jay is a passerine bird in the family Corvidae, native to eastern North America. It is resident through most of eastern and central United States and southern Canada.",
-    habitat: "Forests, suburban areas, parks",
-    range: "Eastern and Central North America",
-    diet: "Nuts, seeds, insects, small vertebrates",
-    imageUrl: "/blue-jay-perched.png",
-    audioUrl: "#",
-  },
-  "House Sparrow": {
-    scientificName: "Passer domesticus",
-    description:
-      "The House Sparrow is a small bird of the sparrow family Passeridae. It's one of the most widely distributed wild birds globally and is closely associated with human habitation.",
-    habitat: "Urban and rural areas near human settlements",
-    range: "Worldwide (introduced to many regions)",
-    diet: "Seeds, grains, insects, food scraps",
-    imageUrl: "/house-sparrow-perched.png",
-    audioUrl: "#",
-  },
-  "European Starling": {
-    scientificName: "Sturnus vulgaris",
-    description:
-      "The European Starling is a medium-sized passerine bird in the starling family. It is about 20 cm long and has glossy black plumage with a metallic sheen, which is speckled with white at some times of year.",
-    habitat: "Urban areas, farmland, open woodlands",
-    range: "Europe, Asia, North America (introduced)",
-    diet: "Insects, fruits, seeds, human food waste",
-    imageUrl: "/european-starling.png",
-    audioUrl: "#",
-  },
-};
+// Define type for Bird data fetched from API
+interface BirdData {
+  name: string;
+  scientificName: string;
+  soundLabel: string;
+  description: string;
+  habitat: string;
+  range: string; // Added range
+  diet: string; // Added diet
+  recognitionCounter: number;
+  imageUrl?: string;
+  audioUrl?: string;
+  confidence?: number; // Optional confidence score
+}
+
+// Type for individual classification result
+interface ClassificationResult {
+    label: string;
+    value: number;
+}
 
 export default function ResultsPage() {
-  const [recognitionResult, setRecognitionResult] =
-    useState<EdgeImpulseResult | null>(null);
+  const [bird, setBird] = useState<BirdData | null>(null);
+  const [rawResults, setRawResults] = useState<ClassificationResult[] | null>(null); // State for raw results
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation(); // Get location object
 
   useEffect(() => {
-    // Try to get the recognition result from sessionStorage
-    const storedResult = sessionStorage.getItem("birdRecognitionResult");
-    console.log("Stored result:", storedResult);
-
-    if (storedResult) {
+    const fetchBirdData = async (label: string, confidence?: number) => {
       try {
-        const parsedResult = JSON.parse(storedResult);
-        console.log("Parsed result:", parsedResult);
-
-        // Validate the parsed result structure
-        if (!Array.isArray(parsedResult.results)) {
-          throw new Error("Invalid classification result format");
+        const response = await fetch(`${API_BASE_URL}/birds/${label}`);
+        if (!response.ok) {
+          throw new Error(`Bird '${label}' not found in database`);
         }
-
-        // Check if we have any predictions
-        if (parsedResult.results.length === 0) {
-          throw new Error("No bird classifications found in the result");
-        }
-
-        // Check if any bird has a confidence > 0
-        const hasValidPrediction = parsedResult.results.some(
-          (result: { value: number }) => result.value > 0
-        );
-        if (!hasValidPrediction) {
-          throw new Error("No confident predictions found");
-        }
-
-        setRecognitionResult(parsedResult);
+        const birdData: Omit<BirdData, 'confidence'> = await response.json();
+        setBird({ ...birdData, confidence }); // Add confidence if provided
       } catch (err) {
-        console.error("Error processing result:", err);
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Could not process the recognition results"
-        );
+        console.error("Error fetching bird data:", err);
+        setError(err instanceof Error ? err.message : "Could not fetch bird details");
+      } finally {
+        setLoading(false);
       }
-    } else {
-      // If no result is found, redirect back to recording
-      navigate("/");
-    }
-
-    setLoading(false);
-  }, [navigate]);
-
-  // Get the top bird prediction with additional validation
-  const getTopBird = () => {
-    if (!recognitionResult?.results) {
-      console.log("No recognition results");
-      return null;
-    }
-
-    console.log("Processing results:", recognitionResult.results);
-
-    // Find the prediction with highest confidence
-    const topPrediction = recognitionResult.results.reduce((top, current) => {
-      return current.value > (top?.value || 0) ? current : top;
-    }, recognitionResult.results[0]);
-
-    if (!topPrediction) {
-      console.log("No predictions found");
-      return null;
-    }
-
-    console.log("Top prediction:", topPrediction);
-
-    // Validate confidence threshold
-    if (topPrediction.value < 0.1) {
-      console.log("Top confidence too low:", topPrediction.value);
-      return null;
-    }
-
-    // Look up bird details in database
-    if (!birdDatabase[topPrediction.label]) {
-      console.log("Bird not found in database:", topPrediction.label);
-      return null;
-    }
-
-    return {
-      name: topPrediction.label,
-      confidence: Math.round(topPrediction.value * 100),
-      ...birdDatabase[topPrediction.label],
     };
-  };
 
-  const bird = getTopBird();
+    // 1. Check location state (from gallery navigation)
+    if (location.state?.bird) {
+      console.log("Using bird data from location state:", location.state.bird);
+      setBird(location.state.bird);
+      setLoading(false);
+      // Clear session storage if navigating from gallery
+      sessionStorage.removeItem("birdRecognitionResult");
+    } else {
+      // 2. Check sessionStorage (from audio recognition)
+      const storedResult = sessionStorage.getItem("birdRecognitionResult");
+      console.log("Stored result:", storedResult);
+
+      if (storedResult) {
+        try {
+          const parsedResult: EdgeImpulseResult = JSON.parse(storedResult);
+          console.log("Parsed result:", parsedResult);
+
+          if (!Array.isArray(parsedResult.results) || parsedResult.results.length === 0) {
+            throw new Error("Invalid or empty classification results");
+          }
+
+          // Find the top prediction
+          const topPrediction = parsedResult.results.reduce((top, current) => {
+            return current.value > (top?.value || 0) ? current : top;
+          }, parsedResult.results[0]);
+
+          if (!topPrediction || topPrediction.value < 0.1) { // Use a threshold if needed
+             throw new Error("No confident predictions found");
+          }
+
+          const confidence = Math.round(topPrediction.value * 100);
+          setRawResults(parsedResult.results); // Store raw results
+          // Fetch details from API using the label from the top prediction
+          fetchBirdData(topPrediction.label, confidence);
+
+        } catch (err) {
+          console.error("Error processing result:", err);
+          setError(err instanceof Error ? err.message : "Could not process recognition results");
+          setLoading(false);
+        }
+      } else {
+        // 3. No data found
+        console.log("No bird data found in state or session storage.");
+        setError("No bird identification data available.");
+        setLoading(false);
+        // Optional: Redirect after a delay or show error permanently
+        // setTimeout(() => navigate("/"), 3000);
+      }
+    }
+  }, [navigate, location.state]); // Depend on location.state
 
   if (loading) {
     return (
@@ -219,21 +170,27 @@ export default function ResultsPage() {
     );
   }
 
-  // Get other predictions for display
+  // Get other predictions for display (using rawResults state)
   const getOtherPredictions = () => {
-    if (!recognitionResult?.results) return [];
+    // Use rawResults and check if bird (top bird) is set
+    if (!rawResults || !bird) return [];
 
-    return recognitionResult.results
-      .filter((result) => result.label !== getTopBird()?.name)
-      .map((result) => ({
+    return rawResults
+      // Filter out the main identified bird
+      .filter((result: ClassificationResult) => result.label !== bird.name)
+      // Map to the desired format
+      .map((result: ClassificationResult) => ({
         name: result.label,
         confidence: Math.round(result.value * 100),
       }))
-      .sort((a, b) => b.confidence - a.confidence)
-      .slice(0, 3); // Get top 3 other predictions
+      // Sort by confidence descending
+      .sort((a: {confidence: number}, b: {confidence: number}) => b.confidence - a.confidence)
+      // Take the top 3
+      .slice(0, 3);
   };
 
-  const otherPredictions = getOtherPredictions();
+  // Calculate otherPredictions only if rawResults are available
+  const otherPredictions = rawResults ? getOtherPredictions() : [];
 
   return (
     <div className="min-h-screen bg-gradient-green-blue">
@@ -272,20 +229,34 @@ export default function ResultsPage() {
                       {bird.scientificName}
                     </p>
                   </div>
-                  <div className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                    {bird.confidence}% match
-                  </div>
+                  {/* Conditionally render confidence */}
+                  {bird.confidence !== undefined && (
+                    <div className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                      {bird.confidence}% match
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
             <div className="p-6">
-              <div className="flex justify-center mb-6">
-                <button className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-md transition-colors">
-                  <Play className="w-5 h-5" />
-                  <span>Play Bird Call</span>
-                </button>
-              </div>
+              {/* Add audio playback functionality if audioUrl exists */}
+              {bird.audioUrl && (
+                 <div className="flex justify-center mb-6">
+                   <button
+                     onClick={() => {
+                       if (bird.audioUrl) {
+                         const audio = new Audio(bird.audioUrl);
+                         audio.play().catch(e => console.error("Audio playback error:", e));
+                       }
+                     }}
+                     className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-md transition-colors"
+                   >
+                     <Play className="w-5 h-5" />
+                     <span>Play Bird Call</span>
+                   </button>
+                 </div>
+              )}
 
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
@@ -332,28 +303,29 @@ export default function ResultsPage() {
                 </div>
               </div>
 
-              {otherPredictions.length > 0 && (
-                <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
-                  <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">
-                    Other Possibilities
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {otherPredictions.map((prediction) => (
-                      <div
-                        key={prediction.name}
-                        className="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-3 flex justify-between items-center"
-                      >
-                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                          {prediction.name}
-                        </span>
-                        <span className="text-xs bg-slate-200 dark:bg-slate-600 px-2 py-1 rounded-full">
-                          {prediction.confidence}%
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Only show "Other Possibilities" if confidence exists (i.e., from recognition) */}
+              {bird.confidence !== undefined && otherPredictions.length > 0 && (
+                 <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+                   <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">
+                     Other Possibilities
+                   </h3>
+                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                     {otherPredictions.map((prediction: { name: string; confidence: number }) => ( // Add type
+                       <div
+                         key={prediction.name}
+                         className="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-3 flex justify-between items-center"
+                       >
+                         <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                           {prediction.name}
+                         </span>
+                         <span className="text-xs bg-slate-200 dark:bg-slate-600 px-2 py-1 rounded-full">
+                           {prediction.confidence}%
+                         </span>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               )}
             </div>
           </div>
 

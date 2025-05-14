@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Mic, Square } from "lucide-react";
 import { cn } from "../lib/utils";
 import { EdgeImpulseClassifier } from "../EdgeImpulseClassifier";
+import BirdGallery from "./BirdGallery"; // Import the gallery component
 
 export default function RecordButton() {
   const [isRecording, setIsRecording] = useState(false);
@@ -312,6 +313,14 @@ export default function RecordButton() {
           </p>
         </div>
       )}
+
+     {/* Add the Bird Gallery below the button and status messages */}
+     <div className="mt-12 w-full max-w-4xl"> {/* Added margin-top and width constraints */}
+        <h3 className="text-lg font-medium text-slate-700 dark:text-slate-200 mb-4 text-center">
+          Bird Library
+        </h3>
+        <BirdGallery />
+      </div>
     </div>
   );
 }
