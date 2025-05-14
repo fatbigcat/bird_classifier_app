@@ -9,6 +9,7 @@ type EdgeImpulseResult = {
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Play, Info, MapPin, AlertCircle } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
+import { BIRDS_DATA } from "../data/birds";
 
 export default function ResultsPage() {
   const [recognitionResult, setRecognitionResult] =
@@ -40,34 +41,27 @@ export default function ResultsPage() {
 
           if (label === "sum") {
             setBirdData({
-              name: "sum",
               confidence: Math.round(topPrediction.value * 100),
+              ...BIRDS_DATA["sum"],
             });
             setLoading(false);
             return;
           }
 
-          fetch(`http://localhost:8000/birds/${label}`)
-            .then((res) => {
-              if (!res.ok) throw new Error("Bird not found in database");
-              return res.json();
-            })
-            .then((data) => {
-              setBirdData({
-                name: label,
-                confidence: Math.round(topPrediction.value * 100),
-                ...data,
-              });
-              fetch(`http://localhost:8000/birds/${label}/recognised`, {
-                method: "POST",
-              });
-              setLoading(false);
-            })
-            .catch((err) => {
-              console.error("Error fetching bird info:", err);
-              setError("Could not fetch bird details");
-              setLoading(false);
+          // Get the bird data from our static object
+          const birdData = BIRDS_DATA[label];
+
+          if (birdData) {
+            setBirdData({
+              confidence: Math.round(topPrediction.value * 100),
+              ...birdData,
             });
+          } else {
+            console.error(`Bird with label '${label}' not found in data`);
+            setError("Could not fetch bird details");
+          }
+
+          setLoading(false);
         }
 
         setRecognitionResult(parsedResult);
