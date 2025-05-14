@@ -18,7 +18,7 @@ export function createAudioPlayer(audioBlob: Blob): HTMLAudioElement {
  * This is a simple implementation - you can enhance it for better visualization
  */
 export function visualizeAudio(
-  audioContext: AudioContext,
+  // audioContext: AudioContext,
   audioBuffer: AudioBuffer,
   canvas: HTMLCanvasElement
 ): void {

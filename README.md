@@ -63,7 +63,7 @@ python insert_birds.py
 
 Ensure MongoDB is running on your local machine (default port: 27017).
 
-```bash
+```bashmongod
 # On macOS/Linux
 mongod --dbpath=/path/to/your/data/directory
 

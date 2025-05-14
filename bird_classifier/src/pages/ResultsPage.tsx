@@ -1,6 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+
+// Define the EdgeImpulseResult type
+type EdgeImpulseResult = {
+  results: { label: string; value: number }[];
+};
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Play, Info, MapPin, AlertCircle } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";

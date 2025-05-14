@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { History, Info, Volume2 } from "lucide-react";
+import { Info, Volume2 } from "lucide-react";
 import RecordButton from "../components/RecordButton";
 // import RecentRecognitions from "../components/RecentRecognitions";
 import ThemeToggle from "../components/ThemeToggle";
