@@ -1,4 +1,3 @@
-// Static bird data
 export interface BirdData {
   name: string;
   scientificName: string;
