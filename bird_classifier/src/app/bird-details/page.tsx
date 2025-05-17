@@ -85,7 +85,7 @@ export default function BirdDetailsPage() {
                 Could not load bird details
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
-                {error || "An unknown error occurred."}
+                {error ?? "An unknown error occurred."}
               </p>
               <Link
                 to="/"
