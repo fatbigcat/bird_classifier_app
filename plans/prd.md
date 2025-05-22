@@ -1,8 +1,8 @@
-# Product Requirements Document: BirdSong ID
+# Product Requirements Document: Goričko Bird ID
 
 ## 1. Introduction
 
-BirdSong ID is a web application designed to identify bird species based on their songs or calls, similar in concept to Shazam but specialized for avian sounds. It utilizes a WebAssembly-powered model for client-side audio classification, ensuring fast processing and offline capability.
+Goričko Bird ID is a web application designed to identify bird species based on their songs or calls, similar in concept to Shazam but specialized for avian sounds. It utilizes a WebAssembly-powered model for client-side audio classification, ensuring fast processing and offline capability.
 
 ## 2. Goals
 

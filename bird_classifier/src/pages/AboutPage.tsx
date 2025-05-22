@@ -16,7 +16,7 @@ export default function AboutPage() {
               <span className="sr-only">Back to home</span>
             </Link>
             <h1 className="text-2xl md:text-3xl font-bold text-green-800 dark:text-green-400">
-              About BirdSong ID
+              About Goričko Bird ID
             </h1>
           </div>
           <ThemeToggle />
@@ -27,72 +27,44 @@ export default function AboutPage() {
             <div className="relative h-48 md:h-64 w-full">
               <img
                 src="https://www.park-goricko.org/data/galerija/5241ae68f451ed0e17941a5b1c619cbec313a42d/31604400403lesna_sova_m.jpg"
-                alt="Birds in forest"
+                alt="Birds in Goričko Nature Park"
                 className="w-full h-full object-cover"
               />
             </div>
 
             <div className="p-6 md:p-8">
               <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-200 mb-4">
-                Our Mission
+                Discover the Birds of Goričko
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
-                BirdSong ID was created to help bird enthusiasts, researchers,
-                and nature lovers identify bird species by their songs and
-                calls. Our mission is to make bird identification accessible to
-                everyone and contribute to bird conservation through increased
-                awareness and education.
+                <strong>Goričko Bird ID</strong> is a web application dedicated to helping you identify the diverse bird species found in Goričko Nature Park. Whether you're a local resident, a visitor, or a nature enthusiast, our app makes it easy to recognize birds by their songs and calls using your device's microphone.
+              </p>
+
+              <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-200 mb-4">
+                Why Goričko?
+              </h2>
+              <p className="text-slate-600 dark:text-slate-300 mb-6">
+                Goričko Nature Park is one of Slovenia's most important biodiversity hotspots, home to over 200 bird species. Many of these birds are rare or protected, making the park a vital area for conservation and birdwatching. Our app is designed to support local awareness and appreciation of this unique natural heritage.
               </p>
 
               <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-200 mb-4">
                 How It Works
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
-                Our app processes audio recordings by analyzing their frequency
-                patterns and temporal features. These sound characteristics are
-                then compared against a database of labeled bird songs using
-                machine learning models. By leveraging spectrogram analysis and
-                neural networks, we can classify bird species with precision,
-                even in noisy environments.
+                Simply record a bird sound in the park or your backyard, and Goričko Bird ID will analyze the audio using advanced machine learning models. The app compares your recording to a curated database of local bird songs, providing you with the most likely species match and detailed information about each bird.
               </p>
 
               <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-200 mb-4">
-                Privacy
+                Our Mission
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
-                We respect your privacy. Audio recordings are only used for bird
-                identification and are not stored on our servers unless you
-                explicitly choose to save them. Location data is only used to
-                improve identification accuracy by considering local bird
-                populations.
+                Our mission is to make bird identification accessible to everyone in Goričko and beyond, fostering a deeper connection with nature and supporting conservation efforts through education and engagement.
               </p>
-
-              <div className="flex flex-col md:flex-row items-center justify-center gap-6 mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
-                <button
-                  type="button"
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-lg transition-colors"
-                  onClick={() =>
-                    alert("Support This Project functionality coming soon!")
-                  }
-                >
-                  <Heart className="w-5 h-5 text-red-500" />
-                  <span>Support This Project</span>
-                </button>
-                <a
-                  href="https://github.com/fatbigcat/bird_classifier_app"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-lg transition-colors"
-                >
-                  <Github className="w-5 h-5" />
-                  <span>GitHub</span>
-                </a>
-              </div>
             </div>
           </div>
 
           <div className="text-center text-sm text-slate-500 dark:text-slate-400">
-            <p>© 2025 Kalina Šušteršič, Sara Štrakl, Urška Krumpak </p>
+            <p>© 2025 Kalina Šušteršič, Sara Štrakl, Urška Krumpak</p>
           </div>
         </main>
       </div>

@@ -1,4 +1,4 @@
-# Implementation Plan: BirdSong ID
+# Implementation Plan: Goričko Bird ID
 
 ## Why This Approach
 

@@ -19,7 +19,7 @@ export default function AboutPage() {
             <span className="sr-only">Back to home</span>
           </Link>
           <h1 className="text-2xl md:text-3xl font-bold text-green-800 dark:text-green-400">
-            About BirdSong ID
+            About Goričko Bird ID
           </h1>
         </header>
 
@@ -38,7 +38,7 @@ export default function AboutPage() {
                 Our Mission
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
-                BirdSong ID was created to help bird enthusiasts, researchers,
+                Goričko Bird ID was created to help bird enthusiasts, researchers,
                 and nature lovers identify bird species by their songs and
                 calls. Our mission is to make bird identification accessible to
                 everyone and contribute to bird conservation through increased
@@ -94,7 +94,7 @@ export default function AboutPage() {
           </div>
 
           <div className="text-center text-sm text-slate-500 dark:text-slate-400">
-            <p>© 2023 BirdSong ID. All rights reserved.</p>
+            <p>© 2023 Goričko Bird ID. All rights reserved.</p>
             <p className="mt-1">Made with ❤️ for bird lovers everywhere</p>
           </div>
         </main>

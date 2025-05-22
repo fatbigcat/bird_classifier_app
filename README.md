@@ -1,4 +1,4 @@
-# Bird Classifier App
+# Goričko Bird ID
 
 A web application that can identify bird species from audio recordings using machine learning. The app allows users to record bird sounds and get instant identification results with detailed information about the detected bird species.
 
