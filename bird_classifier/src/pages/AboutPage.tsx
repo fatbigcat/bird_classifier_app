@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Heart, Github } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 
 export default function AboutPage() {
